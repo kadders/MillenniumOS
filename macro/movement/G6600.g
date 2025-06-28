@@ -120,6 +120,9 @@ if { result != 0 }
 ; Cancel rotation compensation as we use G53 on the probe moves.
 G69
 
+; Store the current rotation state to restore later
+var hadRotation = { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
+
 ; Reset the current probe status counts
 M5012
 
@@ -179,5 +182,29 @@ if { var.workOffset != null }
 
     ; Save restore details to config-override.g
     M500.1
+
+    ; Check if rotation compensation should be restored
+    ; Only restore if:
+    ; 1. Rotation was active before probing, OR
+    ; 2. A new rotation value was calculated during probing (for probe types that calculate rotation)
+    ;
+    ; Probe types that calculate rotation: Rectangle Pocket, Rectangle Block, Web, Pocket, Outside Corner, Vise Corner
+    ; Probe types that do NOT calculate rotation: Circular Bore, Circular Boss, Single Surface
+    var newRotation = { global.mosWPDeg[var.workOffset] != global.mosDfltWPDeg }
+    var shouldRestoreRotation = { var.hadRotation || var.newRotation }
+    
+    if { var.shouldRestoreRotation }
+        ; Use corner position if available (for corner probes), otherwise use center position, otherwise use (0,0)
+        var rotationCenterX = { global.mosWPCnrPos[var.workOffset] != null ? global.mosWPCnrPos[var.workOffset][0] : (global.mosWPCtrPos[var.workOffset] != null ? global.mosWPCtrPos[var.workOffset][0] : 0) }
+        var rotationCenterY = { global.mosWPCnrPos[var.workOffset] != null ? global.mosWPCnrPos[var.workOffset][1] : (global.mosWPCtrPos[var.workOffset] != null ? global.mosWPCtrPos[var.workOffset][1] : 0) }
+        
+        G68 X{var.rotationCenterX} Y{var.rotationCenterY} R{global.mosWPDeg[var.workOffset]}
+        
+        if { var.hadRotation && var.newRotation }
+            echo { "MillenniumOS: Rotation compensation updated to " ^ global.mosWPDeg[var.workOffset] ^ " degrees." }
+        elif { var.hadRotation }
+            echo { "MillenniumOS: Rotation compensation restored." }
+        else
+            echo { "MillenniumOS: Rotation compensation applied (" ^ global.mosWPDeg[var.workOffset] ^ " degrees)." }
 
     echo { "MillenniumOS: WCS Origins have been saved and can be restored on reboot."}

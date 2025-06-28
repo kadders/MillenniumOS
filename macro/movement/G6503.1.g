@@ -298,11 +298,17 @@ G6550 I{var.pID} X{var.sX} Y{var.sY}
 var aR = { var.pSfcX[0][2] }
 
 ; Reduce the angle to below +/- 45 degrees (pi/4 radians)
+; Use a safer approach to prevent infinite loops
 while { var.aR > pi/4 || var.aR < -pi/4 }
     if { var.aR > pi/4 }
         set var.aR = { var.aR - pi/2 }
     elif { var.aR < -pi/4 }
         set var.aR = { var.aR + pi/2 }
+    
+    ; Safety check to prevent infinite loops
+    if { iterations > 10 }
+        echo { "Warning: Rotation normalization loop limit reached, using current angle." }
+        break
 
 set global.mosWPDeg[var.workOffset] = { degrees(var.aR) }
 

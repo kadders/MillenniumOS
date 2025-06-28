@@ -25,9 +25,15 @@ if { var.hasRotation }
         M99
 
     ; Rotate the workpiece around the origin.
-    G68 X0 Y0 R{global.mosWPDeg[var.workOffset]}
+    ; Use corner position if available (for corner probes), otherwise use center position, otherwise use (0,0)
+    var rotationCenterX = { global.mosWPCnrPos[var.workOffset] != null ? global.mosWPCnrPos[var.workOffset][0] : (global.mosWPCtrPos[var.workOffset] != null ? global.mosWPCtrPos[var.workOffset][0] : 0) }
+    var rotationCenterY = { global.mosWPCnrPos[var.workOffset] != null ? global.mosWPCnrPos[var.workOffset][1] : (global.mosWPCtrPos[var.workOffset] != null ? global.mosWPCtrPos[var.workOffset][1] : 0) }
+    
+    G68 X{var.rotationCenterX} Y{var.rotationCenterY} R{global.mosWPDeg[var.workOffset]}
 
-    echo { "MillenniumOS: Rotation compensation of " ^ global.mosWPDeg[var.workOffset] ^ " degrees applied around origin" }
+    ; Determine the rotation center type for the message
+    var rotationCenterType = { global.mosWPCnrPos[var.workOffset] != null ? "corner" : (global.mosWPCtrPos[var.workOffset] != null ? "center" : "origin") }
+    echo { "MillenniumOS: Rotation compensation of " ^ global.mosWPDeg[var.workOffset] ^ " degrees applied around " ^ var.rotationCenterType ^ "." }
 else
     ; Cancel any existing rotation applied
     G69

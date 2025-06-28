@@ -259,10 +259,13 @@ while { iterations < #var.pSfc }
     var dotProduct = { var.approachVecX * var.normalVecX + var.approachVecY * var.normalVecY }
 
     ; Make sure dot product is not zero (which would mean approach is parallel to surface)
-    if { abs(var.dotProduct) < 0.001 }
-        set var.dotProduct = { var.dotProduct >= 0 ? 0.001 : -0.001 }
+    ; Use a consistent threshold for both clamping and sign flipping
+    var minDotProduct = 0.001
+    if { abs(var.dotProduct) < var.minDotProduct }
+        set var.dotProduct = { var.dotProduct >= 0 ? var.minDotProduct : -var.minDotProduct }
 
     ; Ensure the normal is pointing against the approach direction
+    ; If dot product is positive, the normal points toward the approach direction (wrong direction)
     if { var.dotProduct > 0 }
         set var.normalVecX = { -var.normalVecX }
         set var.normalVecY = { -var.normalVecY }
@@ -271,10 +274,9 @@ while { iterations < #var.pSfc }
     ; Calculate deflection magnitude - amount the probe deflects along the approach vector
     ; Adjust by deflection values from tool table
 
-    ; Calculate effective deflection along the approach vector based on individual axis deflections
-    ;var effectiveDeflection = { (var.trX * abs(var.approachVecX)) + (var.trY * abs(var.approachVecY)) }
-    var effectiveDeflection = { sqrt(pow(var.trX * var.approachVecX, 2) + pow(var.trY * var.approachVecY, 2)) }
-
+    ; Simplified tool radius compensation for single surface probing
+    ; For single surface probes, we can use a direct approach based on probe direction
+    var effectiveDeflection = { var.trX * abs(var.approachVecX) + var.trY * abs(var.approachVecY) }
 
     ; Calculate compensation vector components
     ; Project the effective deflection onto the direction perpendicular to the surface (the normal vector)

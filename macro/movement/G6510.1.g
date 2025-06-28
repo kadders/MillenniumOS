@@ -90,7 +90,18 @@ var sAxis = { (var.probeAxis <= 1)? "X" : (var.probeAxis <= 3)? "Y" : "Z" }
 set global.mosWPSfcAxis[var.workOffset] = { var.sAxis }
 
 ; Set surface position on relevant axis
+; Use the compensated probe position from global.mosMI (which contains the tool radius compensated result)
+; G6513 returns a complex structure: global.mosMI[surfaceIndex][0][pointIndex][axis]
+; For single surface probe, we use surface 0, point 0
 set global.mosWPSfcPos[var.workOffset] = { (var.probeAxis <= 1)? global.mosMI[0][0][0][0] : (var.probeAxis <= 3)? global.mosMI[0][0][0][1] : global.mosMI[0][0][0][2] }
+
+; Debug output to verify compensation
+if { exists(global.mosDebug) && global.mosDebug }
+    echo { "G6510.1: PROBE COMPENSATION DEBUG" }
+    echo { "    Probe Axis: " ^ var.probeAxis }
+    echo { "    Tool Radius: " ^ var.tR }
+    echo { "    Compensated Position: " ^ global.mosWPSfcPos[var.workOffset] }
+    echo { "    Raw Probe Data: " ^ global.mosMI[0][0][0] }
 
 ; Report probe results if requested
 if { !exists(param.R) || param.R != 0 }
